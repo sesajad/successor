@@ -1,0 +1,26 @@
+FROM archlinux:latest
+
+# update the system
+RUN pacman -Syu --noconfirm
+
+# install systemd
+RUN pacman -S --noconfirm systemd
+
+# install mate desktop
+RUN pacman -S --noconfirm mate mate-extra
+
+# install lightdm
+RUN pacman -S --noconfirm lightdm lightdm-gtk-greeter
+# RUN systemctl enable lightdm.service
+
+# install zsh
+RUN pacman -S --noconfirm zsh
+
+# set timezone
+RUN ln -sf /usr/share/zoneinfo/Europe/London /etc/localtime
+
+# set up user
+RUN pacman -S --noconfirm sudo
+RUN echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+RUN useradd -m -G wheel -s /bin/zsh ***REMOVED*** 
+RUN echo "***REMOVED***:***REMOVED***" | chpasswd
