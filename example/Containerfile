@@ -1,23 +1,28 @@
 FROM archlinux:latest
 
-# update the system
 RUN pacman -Syu --noconfirm
+RUN pacman -S --noconfirm base systemd
 
-# install systemd
-RUN pacman -S --noconfirm systemd
+# set up boot
+RUN pacman -S --nocnofirm linux linux-firmware mkinitcpio systemd-boot
 
-# install mate desktop
-RUN pacman -S --noconfirm mate mate-extra
+# set up gui
+RUN pacman -S --noconfirm pantheon lightdm lightdm-pantheon-greeter
 
-# install lightdm
-RUN pacman -S --noconfirm lightdm lightdm-gtk-greeter
-# RUN systemctl enable lightdm.service
+# common tools
+RUN pacman -S --noconfirm bash zsh vim
 
-# install zsh
-RUN pacman -S --noconfirm zsh
+# locale
+RUN echo "en_GB.UTF-8 UTF-8" >> /etc/locale.gen
+RUN locale-gen
 
-# set timezone
+# timezone
 RUN ln -sf /usr/share/zoneinfo/Europe/London /etc/localtime
+RUN echo "Europe/London" > /etc/timezone
+
+# set up network
+RUN pacman -S --noconfirm networkmanager
+RUN systemctl enable NetworkManager
 
 # set up user
 RUN pacman -S --noconfirm sudo

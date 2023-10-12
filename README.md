@@ -25,13 +25,13 @@ cd src
 make build
 ```
 
-2. Copy the `succ` directory to `/succ`.
+3. Copy the `succ` directory to `/succ`.
 
 ```
 sudo cp -r succ /succ
 ```
 
-3. Modify your kernel parameters with init=/succ/init. Depending on your bootloader, you may need to use a different method. See [this](https://wiki.archlinux.org/index.php/Kernel_parameters) for more information.
+4. Modify your kernel parameters with init=/succ/init. Depending on your bootloader, you may need to use a different method. See [this](https://wiki.archlinux.org/index.php/Kernel_parameters) for more information.
 
 ## Usage
 
@@ -48,7 +48,13 @@ mkdir -p /succ/new/
 docker build -t the-image . --output type=local,dest=/succ/new/
 ```
 
-Scripts for Docker and Podman are provided in `/succ/example/`.
+Then, a flag must be created to indicate that the OS is ready to be migrated. You can do it with the following command:
+
+```bash
+touch /succ/migration-flag
+```
+
+Easy-to-use scripts for Docker and Podman are provided in `/succ/example/`.
 
 2. Specify migration directories
 
@@ -58,7 +64,7 @@ Now, you must select your persistent and migrating directories in `/succ/directo
 
 You can modify the mount script in `/succ/mount.sh` to mount your root partition in `/succ/old/`. You should change it if your root partition is not `/dev/sda1`.
 
-3. Dry-run the migration
+4. Dry-run the migration
 
 You can dry-run the migration with the following command:
 

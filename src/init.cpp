@@ -1,187 +1,50 @@
-#include <iostream>
-#include <fstream>
-#include <filesystem>
-#include <optional>
-#include <vector>
-#include <set>
-#include <algorithm>
 #include <functional>
+#include <filesystem>
 
-#include "execution.hpp"
+#include <unistd.h>
+#include <syscall.h>
+#include <sys/mount.h>
+
 #include "records.hpp"
-
-
-using namespace std;
-
-const string MAIN_DIR = "/succ/";
-
-bool migrate(filesystem::path src,
-             filesystem::path dst,
-             const record_t &record,
-             bool dry_run = false)
-{
-  switch (record.action)
-  {
-  case record_t::WIPE:
-  {
-    if (!dry_run)
-    {
-      if (filesystem::exists(src))
-        filesystem::remove_all(src);
-
-      if (filesystem::exists(dst))
-        filesystem::remove_all(dst);
-    }
-    else
-      cout << "Wiping " << src << endl;
-    return true;
-  }
-  case record_t::SOURCE:
-  {
-    if (!dry_run)
-    {
-      if (filesystem::exists(dst))
-        filesystem::remove_all(dst);
-    }
-    else
-      cout << "Keeping " << src << endl;
-    return true;
-  }
-  case record_t::DESTINATION:
-  {
-    if (!dry_run)
-    {
-      if (filesystem::exists(src))
-        filesystem::remove_all(src);
-
-      if (filesystem::exists(dst))
-        filesystem::rename(dst, src);
-    }
-    else
-      cout << "Moving " << dst << " to " << src << endl;
-    return true;
-  }
-  case record_t::MERGE:
-  {
-    if (dry_run)
-      cout << "Merging " << src << " and " << dst << endl;
-    set<string> children;
-    for (const auto &child : filesystem::directory_iterator(src))
-      children.insert(child.path().filename());
-
-    for (const auto &child : filesystem::directory_iterator(dst))
-      children.insert(child.path().filename());
-    for (const auto &child : children)
-    {
-      auto result = find_if(record.children->begin(), record.children->end(), [child](const record_t &record)
-                            { return record.name == child; });
-
-      if (result == record.children->end())
-      {
-        if (!dry_run)
-          throw runtime_error("Error: Cannot find child record.");
-        else
-          cout << "Error: Cannot find child record for " << child << endl;
-        return false;
-      }
-      else
-      {
-        if (!migrate(src / child, dst / child, *result, dry_run))
-          return false;
-      }
-    }
-    return true;
-  }
-  default:
-    return false;
-  }
-}
-
-struct Arguments
-{
-  enum 
-  {
-    INIT,
-    HELP,
-    TEST
-  } mode;
-};
-
-Arguments parse_args(int argc, char **argv)
-{
-  if (argc == 0)
-    return Arguments{.mode = Arguments::INIT};
-  else if (argc == 1)
-  {
-    if (string(argv[0]) == "--help" || string(argv[0]) == "-h")
-      return Arguments{.mode = Arguments::HELP};
-    else if (string(argv[0]) == "--test" || string(argv[0]) == "-t")
-      return Arguments{.mode = Arguments::TEST};
-    else
-      throw runtime_error("Error: Invalid argument.");
-  }
-  else
-    throw runtime_error("Error: Too many arguments.");
-}
-
-void print_help()
-{
-  cout << "Usage: succ [OPTION]" << endl;
-  cout << "  -h, --help     Display this help and exit." << endl;
-  cout << "  -t, --test     Run in test mode." << endl;
-}
+#include "logging.hpp"
+#include "cli.hpp"
+#include "migration.hpp"
 
 int main(int argc, char **argv)
 {
-  cout << "Successor is starting..." << endl;
-  Arguments state;
+  std::cout << "Successor is starting..." << std::endl;
+
+  std::cout << "Stage 1: Initializing..." << std::endl;
+  vector<function<void()>> deferred_actions;
+  function<void()> rollback = [&deferred_actions]()
+  {
+    for (auto i = deferred_actions.rbegin(); i != deferred_actions.rend(); i++)
+      (*i)();
+    deferred_actions.clear();
+  };
+
+  Arguments state = Arguments{.mode = Arguments::NORMAL};
   try
   {
     state = parse_args(argc, argv);
   }
   catch (runtime_error &e)
   {
-    cerr << e.what() << endl;
+    std::cout << e.what() << std::endl;
     print_help();
     return 1;
   }
 
-  if (state.mode == Arguments::INIT && getpid() != 1)
-  {
-    cerr << "The process is not running as PID 1, run it in test mode." << endl;
-    panic();
-  }
-
-  function<void()> error_handler = []() { panic(); };
-
-  if (state.mode == Arguments::INIT)
-    error_handler = panic_to_init;
-
-  if (!filesystem::exists(MAIN_DIR + "migration-flag"))
-  {
-    cout << "Migration flag not found. Starting the operating system..." << endl;
-    error_handler();
-  }
-
-  if (state.mode == Arguments::INIT)
-    filesystem::remove(MAIN_DIR + "migration-flag");
-
-  if (state.mode == Arguments::INIT)
-    error_handler = panic_to_shell;
-
-  cout << "Mounting the filesystem..." << endl;
-  if (!run_subprocess("sh /succ/mount.sh"))
-  {
-    cerr << "Error: Cannot mount the filesystem." << endl;
-    error_handler();
-  }
-
-  cout << "Loading migration plan..." << endl;
-  ifstream record_file(MAIN_DIR + "directories.yml");
+  logger_t logger(state.log_path);
+  logger.info << "Loading migration plan..." << logger.endl;
+  ifstream record_file(state.plan_path);
+  deferred_actions.push_back([&record_file]()
+                             { record_file.close(); });
   if (!record_file.good())
   {
-    cerr << "Error: Cannot read directories.yml." << endl;
-    error_handler();
+    logger.error << "Error: Cannot read directories.yml." << logger.endl;
+    rollback();
+    exit(EXIT_FAILURE);
   }
 
   record_t records;
@@ -191,24 +54,121 @@ int main(int argc, char **argv)
   }
   catch (runtime_error &e)
   {
-    cerr << e.what() << endl;
-    error_handler();
+    logger.error << e.what() << logger.endl;
+    rollback();
+    exit(EXIT_FAILURE);
   }
 
-  cout << "Testing migration..." << endl;
-  if (!migrate(filesystem::path(MAIN_DIR + "new/"), filesystem::path(MAIN_DIR + "old/"), records, true))
+  logger.info << "Parsed migration plan:" << logger.endl;
+  to_yaml(std::cout, records);
+
+  // logger.info << "Stage 2: Preparing temproot..." << logger.endl;
+  
+  // string temproot_path_rt_root = state.temproot_path;
+  // string old_path_rt_root = temproot_path_rt_root + state.oldroot_path_rt_temproot;
+  // string new_path_rt_root = old_path_rt_root + state.newroot_path;
+  // logger.info << "temproot path (relative to current root): " << temproot_path_rt_root << logger.endl;
+  // logger.info << "old path (relative to current root): " << old_path_rt_root << logger.endl;
+  // logger.info << "new path (relative to current root): " << new_path_rt_root << logger.endl;
+
+  // logger.info << "Creating directory for temproot" << logger.endl;
+  // if (!filesystem::create_directory(temproot_path_rt_root)) {
+  //   logger.error << "Warning: Cannot create directory for temproot. Probably it exists" << logger.endl;
+  // }
+
+  // logger.info << "Mounting temproot" << logger.endl;
+  // if (mount(NULL, temproot_path_rt_root.c_str(), "tmpfs", 0, NULL) != 0)
+  // {
+  //   logger.error << "Error: Cannot mount the temporarily filesystem." << logger.endl;
+  //   rollback();
+  //   exit(EXIT_FAILURE);
+  // }
+  // deferred_actions.push_back([&logger, &temproot_path_rt_root]()
+  //                            {
+  //   if (umount(temproot_path_rt_root.c_str()) != 0)
+  //   {
+  //     logger.error << "Ignored Error: Cannot unmount temproot." << logger.endl;
+  //   }
+  // });
+
+  // logger.info << "Creating directory for new root" << logger.endl;
+  // if (!filesystem::create_directory(old_path_rt_root)) {
+  //   logger.error << "Warning: Cannot create directory for old root. Probably it exists" << logger.endl;
+  // }
+
+  // logger.info << "Pivoting into temproot" << logger.endl;
+  // if (syscall(SYS_pivot_root, temproot_path_rt_root.c_str(), old_path_rt_root.c_str()) != 0)
+  // {
+  //   logger.error << "Error: Cannot pivot root." << logger.endl;
+  //   rollback();
+  //   exit(EXIT_FAILURE);
+  // }
+
+  // logger.info << "Changing directory to temproot" << logger.endl;
+  // if (chdir("/") != 0)
+  // {
+  //   logger.error << "Error: Cannot change directory." << logger.endl;
+  //   rollback();
+  //   exit(EXIT_FAILURE);
+  // }
+
+  // if (mount(NULL, state.oldroot_path_rt_temproot.c_str(), NULL, MS_REMOUNT, "rw") != 0)
+  // {
+  //   logger.error << "Error: Cannot remount old root as rw." << logger.endl;
+  //   rollback();
+  //   exit(EXIT_FAILURE);
+  // }
+
+  // std::string old_path_rt_temproot = state.oldroot_path_rt_temproot;
+  // std::string new_path_rt_temproot = state.oldroot_path_rt_temproot + state.newroot_path;
+  // std::string temproot_path_rt_temproot = state.oldroot_path_rt_temproot + temproot_path_rt_root;
+  // logger.info << "old path (relative to temproot): " << old_path_rt_temproot << logger.endl;
+  // logger.info << "new path (relative to temproot): " << new_path_rt_temproot << logger.endl;
+  // logger.info << "temproot path (relative to temproot): " << temproot_path_rt_temproot << logger.endl;
+
+  // deferred_actions.push_back([&logger, &old_path_rt_temproot, &temproot_path_rt_temproot]() {
+  //   if (syscall(SYS_pivot_root, old_path_rt_temproot.c_str(), temproot_path_rt_temproot.c_str()) != 0) {
+  //     logger.error << "Ignored Error: Cannot pivot back to root." << logger.endl;
+  //   }
+  //   if (chdir("/") != 0) {
+  //     logger.error << "Ignored Error: Cannot change directory." << logger.endl;
+  //   } });
+
+  auto old_path_rt_temproot = "/";
+  auto new_path_rt_temproot = "/succ/new";
+
+  logger.info << "Stage 3: Migrating..." << logger.endl;
+  logger.info << "Testing migration..." << logger.endl;
+  if (!migrate(logger, filesystem::path(old_path_rt_temproot), filesystem::path(new_path_rt_temproot), records, true))
   {
-    cerr << "Error: dry-run failed." << endl;
-    error_handler();
+    logger.error << "Error: dry-run failed." << logger.endl;
+    rollback();
+    exit(EXIT_FAILURE);
   }
 
-  cout << "Starting migration..." << endl;
-  if (state.mode == Arguments::INIT)
-    migrate(filesystem::path(MAIN_DIR + "new/"), filesystem::path(MAIN_DIR + "old/"), records);
+  logger.info << "Starting migration..." << logger.endl;
+  try {
+  if (state.mode == Arguments::NORMAL)
+    migrate(logger, filesystem::path(old_path_rt_temproot), filesystem::path(new_path_rt_temproot), records);
+  } catch (const filesystem::filesystem_error &e) {
+    logger.error << "Fatal Error: " << e.what() << logger.endl;
+    rollback();
+    exit(EXIT_FAILURE);
+  } catch (const runtime_error &e) {
+    logger.error << "Fatal Error: " << e.what() << logger.endl;
+    rollback();
+    exit(EXIT_FAILURE);
+  }
+  logger.info << "Migration completed." << logger.endl;
 
-  cout << "Migration completed." << endl;
-  if (state.mode == Arguments::INIT)
-    panic_to_init();
+  rollback();
+
+  if (state.next_executable_path)
+    if (execl(state.next_executable_path->c_str(), state.next_executable_path->c_str(), NULL) != 0)
+    {
+      logger.error << "Error: Cannot execute next command." << logger.endl;
+      exit(EXIT_FAILURE);
+    }
 
   return 0;
 }
