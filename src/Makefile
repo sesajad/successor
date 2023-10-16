@@ -1,5 +1,5 @@
 # List of architectures to build for
-ARCHS := x86_64 # i686 armv7l aarch64 
+ARCHS := x86_64 i686 armv7l aarch64 
 
 # Build directory
 BUILD_DIR := ../build
