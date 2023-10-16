@@ -14,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Install build dependencies
-        run: sudo apt update && sudo apt install -f make g++ g++-multilib gcc-multilib g++-aarch64-linux-gnu g++-arm-linux-gnueabihf
+        run: sudo apt update && sudo apt install -f make g++ g++-aarch64-linux-gnu g++-arm-linux-gnueabihf
       - name: Build release
         working-directory: src
         run: make release

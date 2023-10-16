@@ -11,7 +11,7 @@ RELEASE_DIR := ../release
 CC_armv7l := arm-linux-gnueabihf-g++
 CC_aarch64 := aarch64-linux-gnu-g++
 CC_x86_64 := g++
-CC_i686 := g++-multilib
+CC_i686 := g++ -m32
 
 # Build command
 define build
