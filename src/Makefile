@@ -1,5 +1,5 @@
 # List of architectures to build for
-ARCHS := x86_64 i686 armv7l aarch64 
+ARCHS := x86_64 aarch64 # armv7l i686
 
 # Build directory
 BUILD_DIR := ../build
@@ -26,7 +26,7 @@ define release
 	cp ../README.md $(BUILD_DIR)/$(1)/
 	cp -r scripts/* $(BUILD_DIR)/$(1)/
 	ls $(BUILD_DIR)/$(1)/
-	tar -czf $(RELEASE_DIR)/successor-$(1).tar.gz -C $(BUILD_DIR)/$(1)/ .
+	tar -czf $(RELEASE_DIR)/successor-$(1).tar.gz -C $(BUILD_DIR)/$(1)/ .;
 endef
 
 .PHONY: build clean release
