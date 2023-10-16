@@ -3,9 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
-    branches:
-      - master
+      - "v*"
 
 jobs:
   build:
@@ -18,8 +16,15 @@ jobs:
       - name: Build release
         working-directory: src
         run: make release
-      - name: Publish artifacts
-        uses: actions/upload-artifact@v2
+      - name: Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: Release
-          path: release/*
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            release/*
+
