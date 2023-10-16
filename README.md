@@ -1,75 +1,59 @@
 # Successor
 
-Successor is a lightweight tool to easily use reproducible and (somehow) immutable operating systems.
-The whole idea of Successor is to use Docker (or any other OCI-compatible software) to build an OS image and to replace the current OS with the new one easily.
+Successor is a lightweight set of tools to easily use reproducible and (somehow) immutable operating systems.
+The whole idea of Successor is to use Docker (or any other OCI-compatible software) to build an OS image and to boot into it while keeping the current OS as a fallback.
 
 ## Installation
 
 ### Using the installer
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/sesajad/successor/master/installer.sh | sudo sh
+curl -sSL https://raw.githubusercontent.com/sesajad/successor/master/install.sh | sudo sh
 ```
 
-### Manual installation
+### Using binaries
 
-1. Download the project.
+1. Download the latest release from [here](https://github.com/sesajad/successor/releases/latest)
 
-```
-git clone git@github.com:sesajad/successor.git
-```
-2. (Optional) build the project.
+2. Extract the archive to `some-directory`
 
-```
-cd src
-make build
-```
+3. Copy the files to the correct location
 
-3. Copy the `succ` directory to `/succ`.
+```bash
+mkdir -p /succ
+mkdir -p /succ/bin
 
+cp some-directory/* /succ/bin
+mv /sbin/init /sbin/init2
+ln -s /succ/bin/init /sbin/init
 ```
-sudo cp -r succ /succ
-```
-
-4. Modify your kernel parameters with init=/succ/init. Depending on your bootloader, you may need to use a different method. See [this](https://wiki.archlinux.org/index.php/Kernel_parameters) for more information.
 
 ## Usage
 
-**CAUTION: Successor can easily distroy your files, use it at your own risk.**
+**CAUTION: Successor is a relatively safe tool, it is unlikely to remove a file but it is possible to easily make your system unbootable.**
 
-1. Make your new OS
+Successor moderates the boot process so that the latest OS built by successor is booted. If there is no such OS, your current OS (that we call it the root OS) will be booted. Successor OSes are stored in `/succ/images` directory, and can be managed using `succ-build` and `succ-clean` commands.
 
-You need to create a Dockerfile/Containerfile for your OS. You can use the [example](https://github.com/sesajad/successor/blob/master/example/Containerfile) as a base. We highly recommend you to see [tips and tricks](https://github.com/sesajad/successor/blob/master/TIPS.md) to make your OS more usable.
+In order to build a new OS, You need to create a Dockerfile/Containerfile. You can use the [example](https://github.com/sesajad/successor/blob/master/example/Containerfile) as a base. We highly recommend you to see [tips and tricks](https://github.com/sesajad/successor/blob/master/MANUAL.md#Tips) to make your next OS more usable.
 
-To build your OS, you need to set your image output to `/succ/new/`. You can do it with the following command:
-
-```bash
-mkdir -p /succ/new/
-docker build -t the-image . --output type=local,dest=/succ/new/
-```
-
-Then, a flag must be created to indicate that the OS is ready to be migrated. You can do it with the following command:
+Then, run the following command in a place that your `Containerfile` is located:
 
 ```bash
-touch /succ/migration-flag
+sudo succ-build
 ```
 
-Easy-to-use scripts for Docker and Podman are provided in `/succ/example/`.
+If your next OS needs a relatively different kernel and initramfs (than your current one), like in the case that you are switching from alpine (that uses OpenRC) to Ubuntu (that uses systemd), you need to update the bootloader configuration. (see [here](https://github.com/sesajad/successor/blob/master/MANUAL.md#Bootloader))
 
-2. Specify migration directories
+Successor shares the home directory of the root OS with all of the OSes. If you want to share other directories, see [here](https://github.com/sesajad/successor/blob/master/MANUAL.md#Mounting)
 
-Now, you must select your persistent and migrating directories in `/succ/directories.yml`. The example must work for most of the users.
-
-3. Optional: Modify the mount script
-
-You can modify the mount script in `/succ/mount.sh` to mount your root partition in `/succ/old/`. You should change it if your root partition is not `/dev/sda1`.
-
-4. Dry-run the migration
-
-You can dry-run the migration with the following command:
+Now, you can reboot to your new OS and see if it is running using the following command:
 
 ```bash
-sudo /succ/init -t
+succ-current
 ```
 
-Finally, you can reboot your system and you will be using your new OS.
+It is over, you can now even [replace your root OS](https://github.com/sesajad/successor/blob/master/MANUAL.md#Removing) (with caution) or do so many amazing things. To learn more check out the [manual](https://github.com/sesajad/successor/blob/master/MANUAL.md).
+
+## Contributing
+
+Just like any other open source project, Successor is open to contributions.

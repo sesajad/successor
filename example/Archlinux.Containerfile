@@ -3,11 +3,10 @@ FROM archlinux:latest
 RUN pacman -Syu --noconfirm
 RUN pacman -S --noconfirm base systemd
 
-# set up boot
-RUN pacman -S --nocnofirm linux linux-firmware mkinitcpio systemd-boot
-
 # set up gui
-RUN pacman -S --noconfirm pantheon lightdm lightdm-pantheon-greeter
+RUN pacman -S --noconfirm xfce4 lightdm lightdm-gtk-greeter
+# pantheon lightdm lightdm-pantheon-greeter
+RUN systemctl enable lightdm
 
 # common tools
 RUN pacman -S --noconfirm bash zsh vim
@@ -21,8 +20,11 @@ RUN ln -sf /usr/share/zoneinfo/Europe/London /etc/localtime
 RUN echo "Europe/London" > /etc/timezone
 
 # set up network
+RUN echo "nameserver 8.8.8.8" >> /etc/resolv.conf
 RUN pacman -S --noconfirm networkmanager
 RUN systemctl enable NetworkManager
+
+RUN hostnamectl set-hostname ***REMOVED***
 
 # set up user
 RUN pacman -S --noconfirm sudo

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+
+
+IMAGES_PATH="/succ/images"
+
+n=1
+while [ -d "${IMAGES_PATH}/${n}" ] ; do
+  if [ $(stat -c %i "${IMAGES_PATH}/${n}") = $(stat -c %i "/") ] ; then
+    echo "Running revision ${n}"
+    exit 0
+  fi
+  n=$(expr $n + 1)
+done
+
+echo "Running the main system"

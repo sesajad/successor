@@ -1,0 +1,27 @@
+#!/bin/sh
+
+BUILD_ENGINE="podman"
+
+SUCC_PATH="/succ"
+IMAGES_PATH="${SUCC_PATH}/images"
+
+mkdir -p "${SUCC_PATH}"
+mkdir -p "${IMAGES_PATH}"
+
+n=1
+while [ -d "${IMAGES_PATH}/${n}" ] ; do
+  n=$(expr $n + 1)
+done
+REVISON=$n
+
+echo "Building revision ${REVISON}"
+
+ROOT_PATH="${IMAGES_PATH}/${REVISON}"
+
+mkdir -p "${ROOT_PATH}"
+
+if ! ${BUILD_ENGINE} build -t the-image . -o type=local,dest="${ROOT_PATH}"; then
+  echo "Build failed"
+  rm -rf "${ROOT_PATH}"
+  exit 1
+fi

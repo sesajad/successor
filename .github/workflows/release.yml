@@ -1,0 +1,25 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install build dependencies
+        run: sudo apt-get install make g++ g++-multilib g++-aarch64-linux-gnu g++-arm-linux-gnueabihf
+      - name: Build release
+        working-directory: src
+        run: make release
+      - name: Publish artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: Release
+          path: release/*
