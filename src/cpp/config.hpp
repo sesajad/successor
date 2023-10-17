@@ -39,37 +39,37 @@ config_t parse_args(int argc, char **argv)
   std::optional<std::string> next_executable_path;
   for (int i = 1; i < argc; i++)
   {
-    if (argv[i] == "-t" || argv[i] == "--wet-test")
+    if (std::string(argv[i]) == "-t" || std::string(argv[i]) == "--wet-test")
     {
       if (mode)
         throw std::runtime_error("Cannot specify multiple modes");
       mode = config_t::MODE_TEST;
     }
-    else if (argv[i] == "-h" || argv[i] == "--help")
+    else if (std::string(argv[i]) == "-h" || std::string(argv[i]) == "--help")
     {
       if (mode)
         throw std::runtime_error("Cannot specify multiple modes");
       mode = config_t::MODE_HELP;
     }
-    else if (argv[i] == "-V" || argv[i] == "--version")
+    else if (std::string(argv[i]) == "-V" || std::string(argv[i]) == "--version")
     {
       if (mode)
         throw std::runtime_error("Cannot specify multiple modes");
       mode = config_t::MODE_VERSION;
     }
-    else if (argv[i] == "-v" || argv[i] == "--verbose")
+    else if (std::string(argv[i]) == "-v" || std::string(argv[i]) == "--verbose")
     {
       if (verbosity)
         throw std::runtime_error("Cannot specify multiple verbosity levels");
       verbosity = config_t::VERBOSITY_VERBOSE;
     }
-    else if (argv[i] == "-q" || argv[i] == "--quiet")
+    else if (std::string(argv[i]) == "-q" || std::string(argv[i]) == "--quiet")
     {
       if (verbosity)
         throw std::runtime_error("Cannot specify multiple verbosity levels");
       verbosity = config_t::VERBOSITY_QUIET;
     }
-    else if (argv[i] == "--exec")
+    else if (std::string(argv[i]) == "--exec")
     {
       if (i + 1 >= argc)
         throw std::runtime_error("Expected argument after --exec");
@@ -77,7 +77,7 @@ config_t parse_args(int argc, char **argv)
         throw std::runtime_error("Cannot specify multiple executables");
       next_executable_path = argv[++i];
     }
-    else if (argv[i] == "--rootback")
+    else if (std::string(argv[i]) == "--rootback")
     {
       if (i + 1 >= argc)
         throw std::runtime_error("Expected argument after --rootback");
