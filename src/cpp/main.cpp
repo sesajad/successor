@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     {
       std::cerr << "Error: Cannot create rootback directory." << std::endl;
       roll_all_back();
-      sys::execute(args.next_executable_path);
+      exit(1);
     }
 
   std::cout << "Binding sysroot to itself..." << std::endl;
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
   {
     std::cerr << "Error: Cannot attach sysroot to itself." << std::endl;
     roll_all_back();
-    sys::execute(args.next_executable_path);
+    exit(1);
   }
   else
     rollback_stack.push_back([&sysroot]()
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
   {
     std::cerr << "Error: Cannot pivot root." << std::endl;
     roll_all_back();
-    sys::execute(args.next_executable_path);
+    exit(1);
   }
   else
     rollback_stack.push_back([&rootback, &sysroot]()
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
       {
         std::cerr << "Error: Cannot attach mountpoint " << mountpoint << std::endl;
         roll_all_back();
-        sys::execute(args.next_executable_path);
+        exit(1);
       }
       else
         rollback_stack.push_back([&rootback, mountpoint]()
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
   {
     std::cerr << "Error: Cannot change directory to root." << std::endl;
     roll_all_back();
-    sys::execute(args.next_executable_path);
+    exit(1);
   }
   else
   {
