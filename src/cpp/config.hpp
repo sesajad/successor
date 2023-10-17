@@ -95,7 +95,7 @@ config_t parse_args(int argc, char **argv)
   return config_t{
       mode.value_or(config_t::MODE_NORMAL),
       verbosity.value_or(config_t::VERBOSITY_NORMAL),
-      sysroot_path.value(),
+      sysroot_path.value_or("."),
       rootback_path.value_or("/rootback"),
       next_executable_path.value_or(getpid() == 1 ? "/bin/init" : "/bin/sh")};
 }
