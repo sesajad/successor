@@ -3,6 +3,8 @@
 SUCC_PATH="/succ"
 IMAGES_PATH="${SUCC_PATH}/images"
 
+mount / -o remount,rw
+
 mount --bind /home /home
 mount --bind "${SUCC_PATH}" "${SUCC_PATH}"
 # add more persistent directories here
