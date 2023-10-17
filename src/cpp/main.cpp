@@ -50,12 +50,46 @@ int main(int argc, char **argv)
       (*rollback)();
   };
 
+  std::vector<std::string> mountpoints;
+
+  std::cout << "Registering mountpoints to move..." << std::endl;
+  for (const auto &mountpoint : mnt::list(rootback + "/proc/mounts"))
+  {
+    if (mountpoint.target == "/" ||
+        mountpoint.target == rootback)
+      continue;
+    if (find_if(mountpoints.begin(), mountpoints.end(), [&mountpoint](std::string &other)
+                { return mountpoint.target.rfind(other) == 0; }) != mountpoints.end())
+      continue;
+    else
+    {
+      mountpoints.push_back(mountpoint.target);
+      std::remove_if(mountpoints.begin(), mountpoints.end(), [&mountpoint](std::string &other)
+                     { return other.rfind(mountpoint.target) == 0; });
+    }
+  }
+
   if (!std::filesystem::exists(rootback_rt_root))
+  {
+    std::cout << "Warning: rootback directory does not exist. Creating...";
     if (!std::filesystem::create_directories(rootback_rt_root))
     {
       std::cerr << "Error: Cannot create rootback directory." << std::endl;
       roll_all_back();
       exit(1);
+    }
+  }
+
+  for (const auto &mountpoint : mountpoints)
+    if (!std::filesystem::exists(sysroot + mountpoint))
+    {
+      std::cout << "Warning: mountpoint " << mountpoint << " does not exist. Creating...";
+      if (!std::filesystem::create_directories(sysroot + mountpoint))
+      {
+        std::cerr << "Error: Cannot create mountpoint " << mountpoint << "." << std::endl;
+        roll_all_back();
+        exit(1);
+      }
     }
 
   std::cout << "Binding sysroot to itself..." << std::endl;
@@ -79,25 +113,6 @@ int main(int argc, char **argv)
   else
     rollback_stack.push_back([&rootback, &sysroot]()
                              { sys::pivot_root(rootback, rootback + sysroot); });
-
-  std::vector<std::string> mountpoints;
-
-  std::cout << "Registering mountpoints to move..." << std::endl;
-  for (const auto &mountpoint : mnt::list(rootback + "/proc/mounts"))
-  {
-    if (mountpoint.target == "/" ||
-        mountpoint.target == rootback)
-      continue;
-    if (find_if(mountpoints.begin(), mountpoints.end(), [&mountpoint](std::string &other)
-                { return mountpoint.target.rfind(other) == 0; }) != mountpoints.end())
-      continue;
-    else
-    {
-      mountpoints.push_back(mountpoint.target);
-      std::remove_if(mountpoints.begin(), mountpoints.end(), [&mountpoint](std::string &other)
-                     { return other.rfind(mountpoint.target) == 0; });
-    }
-  }
 
   for (const std::string &mountpoint : mountpoints)
   {
