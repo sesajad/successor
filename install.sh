@@ -16,9 +16,21 @@ cp /tmp/succ/succ-clean /succ/bin/succ-clean && \
 cp /tmp/succ/succ-current /succ/bin/succ-current && \
 cp /tmp/succ/succ-uninstall /succ/bin/succ-uninstall && \
 chmod +x /succ/bin/* && \
-echo "Installing init script..." && \
-mv /sbin/init /sbin/init2 && \
-ln -s /succ/bin/init /sbin/init && \
 echo "Removing temporary files..." && \
-rm -rf /tmp/succ && \
+rm -rf /tmp/succ
+
+if [ $? -ne 0 ] ; then
+  echo "Installation failed"
+  exit 1
+fi
+
+if [ -f /sbin/init2 ] ; then
+  echo "Init script already installed"
+  exit 1
+else
+  echo "Installing init script..."
+  mv /sbin/init /sbin/init2 && \
+  ln -s /succ/bin/init /sbin/init
+fi
+
 echo "Done!"
