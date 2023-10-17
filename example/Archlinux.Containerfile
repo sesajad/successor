@@ -24,7 +24,7 @@ RUN echo "nameserver 8.8.8.8" >> /etc/resolv.conf
 RUN pacman -S --noconfirm networkmanager
 RUN systemctl enable NetworkManager
 
-RUN hostnamectl set-hostname ***REMOVED***
+# RUN hostnamectl set-hostname ***REMOVED***
 
 # set up user
 RUN pacman -S --noconfirm sudo

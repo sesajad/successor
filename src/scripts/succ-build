@@ -1,6 +1,20 @@
 #!/bin/sh
 
-BUILD_ENGINE="podman"
+if command -v buildah >/dev/null 2>&1; then
+  BUILD_ENGINE="buildah"
+elif command -v docker >/dev/null 2>&1; then
+  BUILD_ENGINE="docker"
+elif command -v podman >/dev/null 2>&1; then
+  BUILD_ENGINE="podman"
+else
+  echo "No build engine found"
+  exit 1
+fi
+
+if [ -z "$1" ]; then
+  echo "Using default path '.'"
+  set -- "."
+fi
 
 SUCC_PATH="/succ"
 IMAGES_PATH="${SUCC_PATH}/images"
@@ -20,7 +34,7 @@ ROOT_PATH="${IMAGES_PATH}/${REVISON}"
 
 mkdir -p "${ROOT_PATH}"
 
-if ! ${BUILD_ENGINE} build -t the-image . -o type=local,dest="${ROOT_PATH}"; then
+if ! ${BUILD_ENGINE} build -t the-image -o type=local,dest="${ROOT_PATH}" $1; then
   echo "Build failed"
   rm -rf "${ROOT_PATH}"
   exit 1

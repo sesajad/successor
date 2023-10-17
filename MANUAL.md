@@ -36,11 +36,28 @@ curl -sSL https://raw.githubusercontent.com/sesajad/successor/master/install.sh 
 
 ### Replacing the Bootloader
 
+WRONG!
+
+```bash
+docker run -v /boot:/boot --rm the-image sh -c 'pacman -S --noconfirm linux linux-firmware mkinitcpio && mkinitcpio -p linux && bootctl --path=/boot install'
+```
+
 ### Replacing the Root OS
 
 ### Adding Custom Enteries
 
 ### Troubleshooting
+
+If your system fails to boot, first, you need to find your bootloader, each bootloader has a key to edit the boot options. 
+
+| Bootloader | Key |
+|------------|-----|
+| systemd-boot | `e` |
+| Syslinux | `TAB` |
+| GRUB | `e` |
+
+After you pressed the key, append `init=/sbin/init2` to the kernel command line. This will run your root OS. If you need to run the successor images, you can use `init=/succ/images/{REVISION_NUMBER}/sbin/init` instead.
+
 
 # Appendix: Architecture
 
