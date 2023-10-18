@@ -39,3 +39,5 @@ if ! ${BUILD_ENGINE} build -t the-image -o type=local,dest="${ROOT_PATH}" $1; th
   rm -rf "${ROOT_PATH}"
   exit 1
 fi
+
+mkdir -p ${ROOT_PATH}/succ

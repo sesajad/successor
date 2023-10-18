@@ -21,10 +21,15 @@ fi
 
 ROOT_PATH="${IMAGES_PATH}/${REVISON}"
 
-${SUCC_PATH}/bin/setroot "${ROOT_PATH}" --rootback /rootback --exec /bin/true && \
-mount --move /rootback /succ/rootback && \
-exec /sbin/init 
+mkdir -p /rootback
+${SUCC_PATH}/bin/setroot "${ROOT_PATH}" --rootback /rootback --exec /bin/true
 
 if [ $? -ne 0 ] ; then
   exec -a init /sbin/init2
 fi
+
+mount --move /rootback /succ/rootback
+rmdir /rootback
+
+exec /sbin/init 
+

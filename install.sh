@@ -8,6 +8,8 @@ mkdir -p /tmp/succ && \
 tar -xzf /tmp/succ.tar.gz -C /tmp/succ && \
 rm -rf /tmp/succ.tar.gz && \
 mkdir -p /succ/bin && \
+mkdir -p /succ/images && \
+mkdir -p /succ/rootback && \
 echo "Copying files..." && \
 cp /tmp/succ/init /succ/bin/init && \
 cp /tmp/succ/setroot /succ/bin/setroot && \
