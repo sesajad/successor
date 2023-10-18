@@ -4,7 +4,7 @@
 
 Successor is a lightweight set of tools to easily use reproducible and (somehow) immutable operating systems. It is made of a few shell scripts and a core C program to switch between different OS images. There are so many other efforts to achieve similar goals, such as [ostree](), [bootc](), [nix](), or [guix]() to name a few. However, Successor aims to achieve an easy-to-use interface for intermediate users, and to be as minimal as possible.
 
-Successor is achieving its goals by enabling the user to boot into a Docker image of the desired OS. Successor will also help to share folders between the root OS and the Docker image, and to switch between different images.
+Successor is achieving its goals by enabling the user to boot into a Docker image of the desired OS. Successor will also help to share folders between the OSes, and to switch between them with ease.
 
 ## Installation
 
@@ -39,7 +39,7 @@ curl -sSL https://raw.githubusercontent.com/sesajad/successor/master/install.sh 
 WRONG!
 
 ```bash
-docker run -v /boot:/boot --rm the-image sh -c 'pacman -S --noconfirm linux linux-firmware mkinitcpio && mkinitcpio -p linux && bootctl --path=/boot install'
+docker run -v /boot:/boot --rm the-image sh -c 'mkinitcpio -p linux && bootctl --path=/boot install'
 ```
 
 ### Replacing the Root OS
@@ -48,16 +48,15 @@ docker run -v /boot:/boot --rm the-image sh -c 'pacman -S --noconfirm linux linu
 
 ### Troubleshooting
 
-If your system fails to boot, first, you need to find your bootloader, each bootloader has a key to edit the boot options. 
+If your system fails to boot, first, you need to find your bootloader, each bootloader has a key to edit the boot options. If you don't know your bootloader, you can try the following table:
 
 | Bootloader | Key |
 |------------|-----|
 | systemd-boot | `e` |
 | Syslinux | `TAB` |
-| GRUB | `e` |
+| GRUB | ? |
 
-After you pressed the key, append `init=/sbin/init2` to the kernel command line. This will run your root OS. If you need to run the successor images, you can use `init=/succ/images/{REVISION_NUMBER}/sbin/init` instead.
-
+Press the corresponding key, append `init=/sbin/init2` to the boot option. This will run your root OS. For busybox-based systems, you can use `init=/bin/sh` and then run `exec -a init /sbin/init2` manually.
 
 # Appendix: Architecture
 

@@ -13,4 +13,4 @@ while [ -d "${IMAGES_PATH}/${n}" ] ; do
   n=$(expr $n + 1)
 done
 
-echo "Running the main system"
+echo "Running the root system"
