@@ -1,160 +1,107 @@
 #include <iostream>
-#include <string>
-#include <vector>
-#include <filesystem>
-#include <functional>
 
-#include "mount.hpp"
-#include "system.hpp"
-#include "config.hpp"
+#include "interfaces/cli.hpp"
+#include "interfaces/config.hpp"
+
+#include "core/inventory.hpp"
+#include "core/runner.hpp"
 
 int main(int argc, char **argv)
 {
-  config_t args;
-  try
-  {
-    args = parse_args(argc, argv);
+  cmd_t cmd;
+  try {
+    cmd_t cmd = parse_cmd(argc, argv);
+  } catch (std::exception &e) {
+    std::cout << e.what() << std::endl;
+    return 1;
   }
-  catch (std::runtime_error &e)
-  {
-    std::cerr << "Error: " << e.what() << std::endl;
-    print_help();
+  
+  config_t config;
+  try {
+    config = load_config();
+  } catch (std::exception &e) {
+    std::cout << e.what() << std::endl;
+    std::cout << "Unable to load config file." << std::endl;
     return 1;
   }
 
-  if (args.mode == config_t::MODE_HELP)
-  {
-    print_help();
-    return 0;
-  }
-  else if (args.mode == config_t::MODE_VERSION)
-  {
-    print_version();
-    return 0;
-  }
+  std::visit(
+      overloaded{[&config](build_cmd_t &cmd)
+                 {
+                   if (!cmd.image.has_value() && !config.default_image_name.has_value())
+                     throw std::runtime_error("No image name provided");
+                   entity_t entity = inventory::resolve(
+                       cmd.image.value_or(config.default_image_name.value_or("")),
+                       cmd.version.value_or(version_latest));
+                   std::cout << "Building image " << entity.name << ":" << entity.version << std::endl;
+                   inventory::build(entity, cmd.source);
+                 },
+                 [&config](list_cmd_t &cmd)
+                 {
+                   auto current = inventory::current();
+                   for (auto &image : inventory::list_images())
+                   {
+                     std::cout << "Image Name: " << image << std::endl;
+                     for (auto &version : inventory::list_versions(image))
+                     {
+                       std::cout << "  Version: " << version;
+                       if (entity_t{image, version} == inventory::current())
+                         std::cout << " (current)";
+                       if (config.default_image_name)
+                         if (entity_t{image, version} == inventory::resolve(config.default_image_name.value(), config.default_image_version.value_or(version_latest)))
+                           std::cout << " (next)";
+                     }
+                   }
+                 },
+                 [](logs_cmd_t &cmd)
+                 {
+                   std::ifstream is = logging::read_log(cmd.index.value_or(1) - 1);
+                   std::cout << is.rdbuf() << std::endl;
+                  
+                 },
+                 [](remove_specific_cmd_t &cmd)
+                 {
+                   inventory::remove(std::vector{inventory::resolve(cmd.image, cmd.version)});
+                 },
+                 [](remove_unused_cmd_t &cmd)
+                 {
+                   auto versions = inventory::list_versions(cmd.image);
+                   for (auto &version : versions)
+                   {
+                     if (entity_t{cmd.image, version} == inventory::current())
+                     {
+                       std::cout << "Ignoring current version" << std::endl;
+                       break;
+                     }
+                     if (version == *max_element(versions.begin(), versions.end()))
+                     {
+                       std::cout << "Ignoring latest version" << std::endl;
+                       break;
+                     }
+                     inventory::remove(std::vector{inventory::resolve(cmd.image, version)});
+                   }
+                 },
+                 [&config](run_cmd_t &cmd)
+                 {
+                   auto entity = inventory::resolve(cmd.image.value_or(config.default_image_name.value_or("")), cmd.version.value_or(config.default_image_version.value_or(version_latest)));
+                   if (entity.name == "")
+                     throw std::runtime_error("No image name provided");
 
-  std::string sysroot = args.sysroot_path;
-  std::string rootback = args.rootback_path;
-  std::string rootback_rt_root = sysroot + rootback;
+                   logging::logger_t logger = cmd.enable_logging ? logging::file_logger() : logging::tty_logger();
+                   runner::run_mode_t mode = cmd.replace ? runner::RUN_MODE_PERMANENT : runner::RUN_MODE_TEMPORARY;
+                   auto executable = cmd.executable.value_or(config.default_executable.value_or(""));
+                   if (cmd.executable == "")
+                     throw std::runtime_error("No executable provided");
 
-  std::vector<std::function<void()>> rollback_stack;
-  auto roll_one_back = [&rollback_stack]()
-  {
-    (rollback_stack.back())();
-    rollback_stack.pop_back();
-  };
+                   std::vector<std::filesystem::path> persistent_directories = std::move(cmd.persistent_directories);
+                   if (cmd.add_default_persistent_directories)
+                     persistent_directories.insert(persistent_directories.end(), config.persistent_directories.begin(), config.persistent_directories.end());
 
-  auto roll_all_back = [&rollback_stack]()
-  {
-    for (auto rollback = rollback_stack.rbegin(); rollback != rollback_stack.rend(); rollback++)
-      (*rollback)();
-  };
-
-  std::vector<std::string> mountpoints;
-
-  std::cout << "Registering mountpoints to move..." << std::endl;
-  for (const auto &mountpoint : mnt::list(rootback + "/proc/mounts"))
-  {
-    if (mountpoint.target == "/" ||
-        mountpoint.target == rootback)
-      continue;
-    if (find_if(mountpoints.begin(), mountpoints.end(), [&mountpoint](std::string &other)
-                { return mountpoint.target.rfind(other) == 0; }) != mountpoints.end())
-      continue;
-    else
-    {
-      mountpoints.push_back(mountpoint.target);
-      std::remove_if(mountpoints.begin(), mountpoints.end(), [&mountpoint](std::string &other)
-                     { return other.rfind(mountpoint.target) == 0; });
-    }
-  }
-
-  if (!std::filesystem::exists(rootback_rt_root))
-  {
-    std::cout << "Warning: rootback directory does not exist. Creating...";
-    if (!std::filesystem::create_directories(rootback_rt_root))
-    {
-      std::cerr << "Error: Cannot create rootback directory." << std::endl;
-      roll_all_back();
-      exit(1);
-    }
-  }
-
-  for (const auto &mountpoint : mountpoints)
-    if (!std::filesystem::exists(sysroot + mountpoint))
-    {
-      std::cout << "Warning: mountpoint " << mountpoint << " does not exist. Creating...";
-      if (!std::filesystem::create_directories(sysroot + mountpoint))
-      {
-        std::cerr << "Error: Cannot create mountpoint " << mountpoint << "." << std::endl;
-        roll_all_back();
-        exit(1);
-      }
-    }
-
-  std::cout << "Binding sysroot to itself..." << std::endl;
-  if (!mnt::attach_bind(sysroot, sysroot))
-  {
-    std::cerr << "Error: Cannot attach sysroot to itself." << std::endl;
-    roll_all_back();
-    exit(1);
-  }
-  else
-    rollback_stack.push_back([&sysroot]()
-                             { mnt::detach(sysroot); });
-
-  std::cout << "Pivoting root..." << std::endl;
-  if (!sys::pivot_root(sysroot, rootback_rt_root))
-  {
-    std::cerr << "Error: Cannot pivot root." << std::endl;
-    roll_all_back();
-    exit(1);
-  }
-  else
-    rollback_stack.push_back([&rootback, &sysroot]()
-                             { sys::pivot_root(rootback, rootback + sysroot); });
-
-  for (const std::string &mountpoint : mountpoints)
-  {
-    std::cout << "Moving mountpoint " << mountpoint << "..." << std::endl;
-    bool use_bind = false;
-    if (!use_bind)
-      if (!mnt::move(mountpoint, mountpoint.substr(rootback.size())))
-      {
-        std::cerr << "Warning: Cannot move mountpoint " << mountpoint << std::endl;
-        use_bind = true;
-      }
-      else
-        rollback_stack.push_back([&rootback, mountpoint]()
-                                 { mnt::move(mountpoint.substr(rootback.size()), mountpoint); });
-
-    if (use_bind)
-      if (!mnt::attach_bind(mountpoint, mountpoint.substr(rootback.size())))
-      {
-        std::cerr << "Error: Cannot attach mountpoint " << mountpoint << std::endl;
-        roll_all_back();
-        exit(1);
-      }
-      else
-        rollback_stack.push_back([&rootback, mountpoint]()
-                                 { mnt::detach(mountpoint.substr(rootback.size())); });
-  }
-
-  std::cout << "Changing directory to root..." << std::endl;
-  if (!sys::change_dir("/"))
-  {
-    std::cerr << "Error: Cannot change directory to root." << std::endl;
-    roll_all_back();
-    exit(1);
-  }
-  else
-  {
-    rollback_stack.push_back([&rootback]()
-                             { sys::change_dir(rootback); });
-  }
-
-  if (args.mode == config_t::MODE_TEST)
-    roll_all_back();
-  else
-    sys::execute(args.next_executable_path);
+                  runner::run(logger, mode, inventory::path(entity), runner::DEFAULT_ROOTBACK, persistent_directories, executable);
+                 },
+                 [](help_cmd_t &cmd)
+                 {
+                    std::cout << HELP_TEXTS.at(cmd.command.value_or("")) << std::endl;
+                 }},
+      cmd);
 }

@@ -1,35 +1,12 @@
 #!/bin/sh
 
-SUCC_PATH="/succ"
-IMAGES_PATH="${SUCC_PATH}/images"
-
 mount / -o remount,rw
 
-mount --bind /home /home
-mount --bind "${SUCC_PATH}" "${SUCC_PATH}"
-# add more persistent directories here
-
-n=1
-while [ -d "${IMAGES_PATH}/${n}" ] ; do
-  n=$(expr $n + 1)
-done
-REVISON=$(expr $n - 1)
-
-if [ "$REVISON" -eq 0 ] ; then
-  exec -a init /sbin/init2
-fi
-
-ROOT_PATH="${IMAGES_PATH}/${REVISON}"
-
-mkdir -p /rootback
-${SUCC_PATH}/bin/setroot "${ROOT_PATH}" --rootback /rootback --exec /bin/true
+/succ/bin/successor run --dp --executable /bin/true
 
 if [ $? -ne 0 ] ; then
   exec -a init /sbin/init2
+else
+  exec /sbin/init 
 fi
-
-mount --move /rootback /succ/rootback
-rmdir /rootback
-
-exec /sbin/init 
 

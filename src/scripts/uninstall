@@ -1,5 +1,6 @@
 #!/bin/sh
 
 rm -rf /succ
+rm -rf /sbin/successor
 rm -rf /sbin/init
 mv /sbin/init2 /sbin/init

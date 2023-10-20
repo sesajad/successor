@@ -1,5 +1,5 @@
 # List of architectures to build for
-ARCHS := x86_64 aarch64 # armv7l i686
+ARCHS := x86_64 # aarch64 armv7l i686
 
 # Build directory
 BUILD_DIR := ../build
@@ -16,7 +16,7 @@ CC_i686 := g++ -m32
 # Build command
 define build
 	mkdir -p $(BUILD_DIR)/$(1)
-	$(CC_$(1)) --std=c++17 cpp/main.cpp -o $(BUILD_DIR)/$(1)/setroot;
+	$(CC_$(1)) --std=c++17 cpp/main.cpp -o $(BUILD_DIR)/$(1)/successor;
 endef
 
 # Release command
