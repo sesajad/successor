@@ -8,9 +8,9 @@
 
 int main(int argc, char **argv)
 {
-  cmd_t cmd;
+  cmd_t cmd = help_cmd_t{};
   try {
-    cmd_t cmd = parse_cmd(argc, argv);
+    cmd = parse_cmd(argc, argv);
   } catch (std::exception &e) {
     std::cout << e.what() << std::endl;
     return 1;

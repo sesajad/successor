@@ -176,7 +176,7 @@ std::variant<list_cmd_t, help_cmd_t> parse_list_cmd(int argc, char **argv)
 {
   for (int i = 1; i < argc; i++)
     if (std::string(argv[i]) == "--help" || std::string(argv[i]) == "-h")
-      return help_cmd_t{.command = "logs"};
+      return help_cmd_t{.command = "list"};
     else
       throw std::runtime_error("Invalid argument.");
 
@@ -406,18 +406,29 @@ cmd_t parse_cmd(int argc, char **argv)
     return help_cmd_t();
 
   if (command == "build")
-    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_build_cmd(argc - 1, &argv[1]));
+    return std::visit([](auto &&arg) -> cmd_t
+                      { return arg; },
+                      parse_build_cmd(argc - 1, &argv[1]));
   else if (command == "list")
-    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_list_cmd(argc - 1, &argv[1]));
+  {
+    return std::visit([](auto &&arg) -> cmd_t
+                      { return arg; },
+                      parse_list_cmd(argc - 1, &argv[1]));
+  }
   else if (command == "logs")
-    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_logs_cmd(argc - 1, &argv[1]));
+    return std::visit([](auto &&arg) -> cmd_t
+                      { return arg; },
+                      parse_logs_cmd(argc - 1, &argv[1]));
   else if (command == "remove")
-    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_remove_cmd(argc - 1, &argv[1]));
+    return std::visit([](auto &&arg) -> cmd_t
+                      { return arg; },
+                      parse_remove_cmd(argc - 1, &argv[1]));
   else if (command == "run")
-    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_run_cmd(argc - 1, &argv[1]));
+    return std::visit([](auto &&arg) -> cmd_t
+                      { return arg; },
+                      parse_run_cmd(argc - 1, &argv[1]));
   else
     throw std::runtime_error("Invalid command.");
-
 }
 
 #endif
