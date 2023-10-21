@@ -406,15 +406,15 @@ cmd_t parse_cmd(int argc, char **argv)
     return help_cmd_t();
 
   if (command == "build")
-    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_build_cmd(argc + 1, &argv[1]));
+    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_build_cmd(argc - 1, &argv[1]));
   else if (command == "list")
-    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_list_cmd(argc + 1, &argv[1]));
+    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_list_cmd(argc - 1, &argv[1]));
   else if (command == "logs")
-    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_logs_cmd(argc + 1, &argv[1]));
+    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_logs_cmd(argc - 1, &argv[1]));
   else if (command == "remove")
-    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_remove_cmd(argc + 1, &argv[1]));
+    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_remove_cmd(argc - 1, &argv[1]));
   else if (command == "run")
-    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_run_cmd(argc + 1, &argv[1]));
+    return visit([](auto &&arg) -> cmd_t { return arg; }, parse_run_cmd(argc - 1, &argv[1]));
   else
     throw std::runtime_error("Invalid command.");
 
