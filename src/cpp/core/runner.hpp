@@ -167,11 +167,11 @@ namespace runner
         logger.info << "Executing " << executable.value() << "..." << std::endl;
         if (run_mode == run_mode_t::RUN_MODE_PERMANENT)
         {
-          sys::execute_replace(executable.value());
+          sys::execute(executable.value(), {}, true);
         }
         else
         {
-          int result = sys::execute(executable.value());
+          int result = sys::execute(executable.value(), {}, false);
           if (result != 0)
           {
             throw std::runtime_error("Executable returned non-zero exit code.");

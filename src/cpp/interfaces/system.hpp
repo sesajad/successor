@@ -31,20 +31,24 @@ namespace sys
       throw system_error("Cannot pivot root. Error code: " + std::string(std::strerror(errno)));
   }
 
-  void execute_replace(std::string path)
+  // add args
+  int execute(std::string executable, std::vector<std::string> args = {}, bool replace = false)
   {
-    if (execl(path.c_str(), path.c_str(), NULL) == -1)
-      throw system_error("Cannot execute handover. Error code: " + std::string(std::strerror(errno)));
-  }
+    char *arglist[args.size() + 1];
+    arglist[0] = (char *)(executable.c_str());
+    for (int i = 0; i < args.size(); i++)
+      arglist[i + 1] = (char *)(args[i].c_str());
 
-  int execute(std::string path)
-  {
-    pid_t pid = fork();
-    if (pid == -1)
-      throw system_error("Cannot fork process. Error code: " + std::string(std::strerror(errno)));
+    pid_t pid = 0;
+    if (!replace)
+    {
+      pid = fork();
+      if (pid == -1)
+        throw system_error("Cannot fork process. Error code: " + std::string(std::strerror(errno)));
+    }
     if (pid == 0)
     {
-      if (execl(path.c_str(), path.c_str(), NULL) == -1)
+      if (execv(executable.c_str(), arglist) == -1)
         throw system_error("Cannot execute command. Error code: " + std::string(std::strerror(errno)));
       return 0; // unreachable
     }
@@ -57,20 +61,14 @@ namespace sys
     }
   }
 
-  int shell(std::string path)
-  {
-    FILE *f = popen(path.c_str(), "r");
-    if (f == NULL)
-      throw system_error("Cannot execute command. Error code: " + std::string(std::strerror(errno)));
-    int res = pclose(f);
-    if (res == -1)
-      throw system_error("Cannot wait for executed command. Error code: " + std::string(std::strerror(errno)));
-    return res;
-  }
-
   bool binary_exists(std::string name)
   {
-    int res = shell("which " + name);
+    FILE *f = popen(("which " + name).c_str(), "r");
+    if (f == NULL)
+      throw system_error("Cannot use which. Error code: " + std::string(std::strerror(errno)));
+    int res = pclose(f);
+    if (res == -1)
+      throw system_error("Cannot wait for which. Error code: " + std::string(std::strerror(errno)));
     return res == 0;
   }
 

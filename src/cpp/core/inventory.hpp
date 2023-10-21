@@ -34,9 +34,11 @@ namespace inventory
     if (!sys::binary_exists(builder))
       throw std::runtime_error("Cannot find any container builder. Install buildah, podman or docker");
 
-    std::string execution_command = builder + " -t " + entity.name + ":" + std::to_string(entity.version) + " -o \"type=local,dest=" + path(entity).string() + "\" " + source.string();
-
-    if (sys::shell(execution_command) != 0)
+    if (sys::execute(builder, {"-t",
+                               entity.name + ":" + std::to_string(entity.version),
+                               "-o",
+                               "type=local,dest=" + path(entity).string(),
+                               source.string()}) != 0)
     {
       std::filesystem::remove_all(path(entity));
       throw std::runtime_error("Cannot build image");
@@ -90,7 +92,8 @@ namespace inventory
         std::filesystem::remove_all(INVENTORY_PATH / image);
   }
 
-  entity_t resolve(std::string image, version_t version) {
+  entity_t resolve(std::string image, version_t version)
+  {
     if (std::holds_alternative<version_latest_t>(version))
       return {.name = image, .version = *std::max_element(list_versions(image).begin(), list_versions(image).end())};
     else
