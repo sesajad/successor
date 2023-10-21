@@ -73,7 +73,7 @@ int main(int argc, char **argv)
                        std::cout << "Ignoring current version" << std::endl;
                        break;
                      }
-                     if (version == *max_element(versions.begin(), versions.end()))
+                     if (version == *versions.rend())
                      {
                        std::cout << "Ignoring latest version" << std::endl;
                        break;

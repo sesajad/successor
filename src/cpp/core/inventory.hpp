@@ -55,7 +55,7 @@ namespace inventory
     return images;
   }
 
-  std::set<int> list_versions(std::string image)
+  std::set<int, std::less<int>> list_versions(std::string image)
   {
     for (auto &entry : std::filesystem::directory_iterator(INVENTORY_PATH))
       if (entry.path().filename().string() == image)
@@ -94,8 +94,9 @@ namespace inventory
 
   entity_t resolve(std::string image, version_t version)
   {
+    int latest_version = list_versions(image).empty() ? 0 : (*list_versions(image).rend());
     if (std::holds_alternative<version_latest_t>(version))
-      return {.name = image, .version = *std::max_element(list_versions(image).begin(), list_versions(image).end())};
+      return {.name = image, .version = latest_version};
     else
       return {.name = image, .version = std::get<int>(version)};
   }
