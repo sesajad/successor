@@ -37,14 +37,20 @@ namespace inventory
     if (!std::filesystem::create_directories(path(entity)))
       throw std::runtime_error("Cannot create inventory directory");
 
-    if (sys::execute(builder, {"-t",
-                               entity.name + ":" + std::to_string(entity.version),
-                               "-o",
-                               "type=local,dest=" + path(entity).string(),
-                               source.string()}) != 0)
+    try
+    {
+      if (sys::execute(builder, {"build",
+                                 "-t", entity.name + ":" + std::to_string(entity.version),
+                                 "-o", "type=local,dest=" + path(entity).string(),
+                                 "-f", source.string()}) != 0)
+      {
+        throw std::runtime_error("Cannot build image");
+      }
+    }
+    catch (std::exception &e)
     {
       std::filesystem::remove_all(path(entity));
-      throw std::runtime_error("Cannot build image");
+      throw e;
     }
   }
 

@@ -33,13 +33,13 @@ namespace sys
       throw system_error("Cannot pivot root. Error code: " + std::string(std::strerror(errno)));
   }
 
-  // add args
   int execute(std::string executable, std::vector<std::string> args = {}, bool replace = false, bool silent = false)
   {
-    char *arglist[args.size() + 1];
+    char *arglist[args.size() + 2];
     arglist[0] = (char *)(executable.c_str());
     for (int i = 0; i < args.size(); i++)
       arglist[i + 1] = (char *)(args[i].c_str());
+    arglist[args.size() + 1] = NULL;
 
     pid_t pid = 0;
     if (!replace)
