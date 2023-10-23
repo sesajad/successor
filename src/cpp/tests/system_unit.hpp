@@ -1,6 +1,3 @@
-#define BOOST_TEST_MODULE system
-#include <boost/test/included/unit_test.hpp>
-
 #include "../interfaces/system.hpp"
 
 BOOST_AUTO_TEST_CASE(test_execute)

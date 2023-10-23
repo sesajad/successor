@@ -11,11 +11,12 @@ namespace logging
 {
   const std::filesystem::path LOG_PATH = "/succ/logs";
 
-  struct logger_t
+  class logger_t
   {
-    std::ostream &info;
-    std::ostream &warn;
-    std::ostream &err;
+  public:
+    virtual std::ostream &info() = 0;
+    virtual std::ostream &warn() = 0;
+    virtual std::ostream &error() = 0;
   };
 
   std::ifstream read_log(int index)
@@ -30,25 +31,55 @@ namespace logging
       throw std::runtime_error("Invalid log index");
 
     std::ifstream stream(log_files[log_files.size() - index - 1]);
-    
     return std::move(stream);
   }
 
-  logger_t file_logger()
+  class file_logger : public logger_t
   {
-    std::time_t now = std::time(nullptr);
-    char timestamp[20];
-    std::strftime(timestamp, sizeof(timestamp), "%Y-%m-%d_%H-%M-%S", std::localtime(&now));
-    std::filesystem::path log_file_path = LOG_PATH / (std::string("log_") + timestamp + ".txt");
-    std::ofstream log_file(log_file_path);
+    std::ofstream log_file;
 
-    return logger_t{log_file, log_file, log_file};
-  }
+  public:
+    file_logger()
+    {
+      std::time_t now = std::time(nullptr);
+      char timestamp[20];
+      std::strftime(timestamp, sizeof(timestamp), "%Y-%m-%d_%H-%M-%S", std::localtime(&now));
+      std::filesystem::path log_file_path = LOG_PATH / (std::string("log_") + timestamp + ".txt");
+      log_file.open(log_file_path);
+      if (!log_file.is_open())
+        throw std::runtime_error("Cannot open log file");
+    }
 
-  logger_t tty_logger()
+    std::ostream &info() override
+    {
+      return log_file;
+    }
+    std::ostream &warn() override
+    {
+      return log_file;
+    }
+    std::ostream &error() override
+    {
+      return log_file;
+    }
+  };
+
+  class tty_logger : public logger_t
   {
-    return logger_t{std::cout, std::cout, std::cerr};
-  }
+  public:
+    std::ostream &info() override
+    {
+      return std::cout;
+    }
+    std::ostream &warn() override
+    {
+      return std::cout;
+    }
+    std::ostream &error() override
+    {
+      return std::cout;
+    }
+  };
 }
 
 #endif

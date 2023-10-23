@@ -23,7 +23,7 @@ namespace runner
     RUN_MODE_TEMPORARY,
   };
 
-  void run(const logging::logger_t &logger, run_mode_t run_mode,
+  void run(logging::logger_t &logger, run_mode_t run_mode,
            std::filesystem::path sysroot,
            std::optional<std::filesystem::path> rootback,
            const std::vector<std::filesystem::path> &persistent_directories,
@@ -65,7 +65,7 @@ namespace runner
         throw std::runtime_error("Cannot create temporary rootback directory.");
       }
 
-      logger.info << "Preparing persistent directories..." << std::endl;
+      logger.info() << "Preparing persistent directories..." << std::endl;
       for (const auto &p : persistent_directories)
       {
         if (!std::filesystem::exists(p))
@@ -79,7 +79,7 @@ namespace runner
       }
 
       std::vector<std::string> migrating_mounts;
-      logger.info << "Registering mountpoints to move..." << std::endl;
+      logger.info() << "Registering mountpoints to move..." << std::endl;
       for (const auto &mountpoint : sys::mnt::list())
       {
         if (mountpoint.target == "/")
@@ -98,26 +98,26 @@ namespace runner
       for (const auto &m : migrating_mounts)
         if (!std::filesystem::exists(sysroot / m))
         {
-          logger.warn << "Warning: mountpoint " << m << " does not exist. Creating...";
+          logger.warn() << "Warning: mountpoint " << m << " does not exist. Creating...";
           if (!std::filesystem::create_directories(sysroot / m))
           {
             throw std::runtime_error("Cannot create mountpoint " + m + ".");
           }
         }
 
-      logger.info << "Binding sysroot to itself..." << std::endl;
+      logger.info() << "Binding sysroot to itself..." << std::endl;
       sys::mnt::bind(sysroot, sysroot);
       rollback_stack.push_back([&sysroot]()
                                { sys::mnt::detach(sysroot); });
 
-      logger.info << "Setting root..." << std::endl;
+      logger.info() << "Setting root..." << std::endl;
       sys::pivot_root(sysroot, sysroot / tmprootback);
       rollback_stack.push_back([&tmprootback, &sysroot]()
                                { sys::pivot_root(tmprootback, tmprootback / sysroot); });
 
       for (const std::string &mountpoint : migrating_mounts)
       {
-        logger.info << "Moving mountpoint " << mountpoint << "..." << std::endl;
+        logger.info() << "Moving mountpoint " << mountpoint << "..." << std::endl;
         bool use_bind = false;
         if (!use_bind)
           try
@@ -128,7 +128,7 @@ namespace runner
           }
           catch (std::runtime_error &e)
           {
-            logger.warn << "Warning: Cannot move mountpoint " << mountpoint << std::endl;
+            logger.warn() << "Warning: Cannot move mountpoint " << mountpoint << std::endl;
             use_bind = true;
           }
 
@@ -140,10 +140,10 @@ namespace runner
 
       if (rootback.has_value())
       {
-        logger.info << "Moving tmprootback..." << std::endl;
+        logger.info() << "Moving tmprootback..." << std::endl;
         if (!std::filesystem::exists(rootback.value()))
         {
-          logger.warn << "Warning: rootback directory does not exist. Creating..." << std::endl;
+          logger.warn() << "Warning: rootback directory does not exist. Creating..." << std::endl;
           if (!std::filesystem::create_directories(rootback.value()))
           {
             throw std::runtime_error("Cannot create rootback directory.");
@@ -151,20 +151,20 @@ namespace runner
         }
         sys::mnt::move(tmprootback, rootback.value());
       } else {
-        logger.info << "Unmounting tmprootback..." << std::endl;
+        logger.info() << "Unmounting tmprootback..." << std::endl;
         sys::mnt::detach(tmprootback);
       }
       std::filesystem::remove(tmprootback);
 
       std::string previous_cwd = std::filesystem::current_path().string();
-      logger.info << "Changing directory to root..." << std::endl;
+      logger.info() << "Changing directory to root..." << std::endl;
       std::filesystem::current_path("/");
       rollback_stack.push_back([&previous_cwd]()
                                { std::filesystem::current_path(previous_cwd); });
 
       if (executable)
       {
-        logger.info << "Executing " << executable.value() << "..." << std::endl;
+        logger.info() << "Executing " << executable.value() << "..." << std::endl;
         if (run_mode == run_mode_t::RUN_MODE_PERMANENT)
         {
           sys::execute(executable.value(), {}, true);
@@ -181,8 +181,8 @@ namespace runner
     }
     catch (const std::exception &e)
     {
-      logger.err << "Error: " << e.what() << std::endl;
-      logger.info << "Rolling back..." << std::endl;
+      logger.error() << "Error: " << e.what() << std::endl;
+      logger.info() << "Rolling back..." << std::endl;
       roll_all_back();
       throw e;
     }
