@@ -15,7 +15,7 @@ int main(int argc, char **argv)
     std::cout << e.what() << std::endl;
     return 1;
   }
-  
+
   config_t config;
   try {
     config = load_config();
@@ -33,6 +33,7 @@ int main(int argc, char **argv)
                    entity_t entity = inventory::resolve(
                        cmd.image.value_or(config.default_image_name.value_or("")),
                        cmd.version.value_or(version_latest));
+                   entity.version++;
                    std::cout << "Building image " << entity.name << ":" << entity.version << std::endl;
                    inventory::build(entity, cmd.source);
                  },
@@ -57,7 +58,7 @@ int main(int argc, char **argv)
                  {
                    std::ifstream is = logging::read_log(cmd.index.value_or(1) - 1);
                    std::cout << is.rdbuf() << std::endl;
-                  
+
                  },
                  [](remove_specific_cmd_t &cmd)
                  {
@@ -97,11 +98,11 @@ int main(int argc, char **argv)
                    if (cmd.add_default_persistent_directories)
                      persistent_directories.insert(persistent_directories.end(), config.persistent_directories.begin(), config.persistent_directories.end());
 
-                  runner::run(logger, mode, inventory::path(entity), runner::DEFAULT_ROOTBACK, persistent_directories, executable);
+                   runner::run(logger, mode, inventory::path(entity), runner::DEFAULT_ROOTBACK, persistent_directories, executable);
                  },
                  [](help_cmd_t &cmd)
                  {
-                    std::cout << HELP_TEXTS.at(cmd.command.value_or("")) << std::endl;
+                   std::cout << HELP_TEXTS.at(cmd.command.value_or("")) << std::endl;
                  }},
       cmd);
 }

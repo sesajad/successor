@@ -36,9 +36,6 @@ namespace logging
 
   logger_t file_logger()
   {
-    if (!std::filesystem::exists(LOG_PATH))
-      std::filesystem::create_directory(LOG_PATH);
-
     std::time_t now = std::time(nullptr);
     char timestamp[20];
     std::strftime(timestamp, sizeof(timestamp), "%Y-%m-%d_%H-%M-%S", std::localtime(&now));

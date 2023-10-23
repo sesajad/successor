@@ -23,16 +23,19 @@ namespace inventory
 
   void build(entity_t entity, std::filesystem::path source)
   {
+    std::string builder = "";
+    if (sys::binary_exists("buildah"))
+      builder = "buildah";
+    if (builder == "" && sys::binary_exists("podman"))
+      builder = "podman";
+    if (builder == "" && sys::binary_exists("docker"))
+      builder = "docker";
+
+    if (builder == "")
+      throw std::runtime_error("Cannot find any container builder. Install buildah, podman or docker");
+
     if (!std::filesystem::create_directories(path(entity)))
       throw std::runtime_error("Cannot create inventory directory");
-
-    std::string builder = "buildah";
-    if (!sys::binary_exists(builder))
-      builder = "podman";
-    if (!sys::binary_exists(builder))
-      builder = "docker";
-    if (!sys::binary_exists(builder))
-      throw std::runtime_error("Cannot find any container builder. Install buildah, podman or docker");
 
     if (sys::execute(builder, {"-t",
                                entity.name + ":" + std::to_string(entity.version),

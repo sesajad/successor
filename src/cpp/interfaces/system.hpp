@@ -32,7 +32,7 @@ namespace sys
   }
 
   // add args
-  int execute(std::string executable, std::vector<std::string> args = {}, bool replace = false)
+  int execute(std::string executable, std::vector<std::string> args = {}, bool replace = false, bool silent = false)
   {
     char *arglist[args.size() + 1];
     arglist[0] = (char *)(executable.c_str());
@@ -46,30 +46,32 @@ namespace sys
       if (pid == -1)
         throw system_error("Cannot fork process. Error code: " + std::string(std::strerror(errno)));
     }
-    if (pid == 0)
+    if (replace || pid == 0)
     {
-      if (execv(executable.c_str(), arglist) == -1)
+      if (silent)
+      {
+        int fd = open("/dev/null", O_WRONLY);
+        if (fd == -1)
+          throw system_error("Cannot open /dev/null. Error code: " + std::string(std::strerror(errno)));
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+      }
+      if (execvp(executable.c_str(), arglist) == -1)
         throw system_error("Cannot execute command. Error code: " + std::string(std::strerror(errno)));
-      return 0; // unreachable
+      return -1; // unreachable
     }
     else
     {
       int status;
       if (waitpid(pid, &status, 0) == -1)
         throw system_error("Cannot wait for forked process. Error code: " + std::string(std::strerror(errno)));
-      return status;
+      return WEXITSTATUS(status);
     }
   }
 
   bool binary_exists(std::string name)
   {
-    FILE *f = popen(("which " + name).c_str(), "r");
-    if (f == NULL)
-      throw system_error("Cannot use which. Error code: " + std::string(std::strerror(errno)));
-    int res = pclose(f);
-    if (res == -1)
-      throw system_error("Cannot wait for which. Error code: " + std::string(std::strerror(errno)));
-    return res == 0;
+    return execute("sh", {"-c", "which " + name}, false, true) == 0;
   }
 
   namespace mnt
