@@ -29,11 +29,16 @@ define release
 	tar -czf $(RELEASE_DIR)/successor-$(1).tar.gz -C $(BUILD_DIR)/$(1)/ .;
 endef
 
-.PHONY: build clean release
+.PHONY: clean build test release
 
 build:
 	mkdir -p $(BUILD_DIR)
 	$(foreach arch,$(ARCHS),$(call build,$(arch)))
+
+test:
+	mkdir -p $(BUILD_DIR)
+	$(CC_x86_64) --std=c++17 cpp/tests/all.cpp -o $(BUILD_DIR)/test
+	$(BUILD_DIR)/test
 
 clean:
 	rm -rf $(BUILD_DIR) $(RELEASE_DIR)
