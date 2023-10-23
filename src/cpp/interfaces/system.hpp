@@ -10,6 +10,8 @@
 #include <sys/mount.h>
 #include <sys/syscall.h>
 #include <sys/wait.h>
+#include <fcntl.h>
+
 
 namespace sys
 {
