@@ -11,20 +11,22 @@ int main(int argc, char **argv)
   cmd_t cmd = help_cmd_t{};
   try {
     cmd = parse_cmd(argc, argv);
-  } catch (std::exception &e) {
+  } catch (const std::exception &e) {
     std::cout << e.what() << std::endl;
+    std::cout << HELP_TEXTS.at("") << std::endl;
     return 1;
   }
 
   config_t config;
   try {
     config = load_config();
-  } catch (std::exception &e) {
+  } catch (const  std::exception &e) {
     std::cout << e.what() << std::endl;
     std::cout << "Unable to load config file." << std::endl;
     return 1;
   }
 
+  try {
   std::visit(
       overloaded{[&config](build_cmd_t &cmd)
                  {
@@ -105,4 +107,9 @@ int main(int argc, char **argv)
                    std::cout << HELP_TEXTS.at(cmd.command.value_or("")) << std::endl;
                  }},
       cmd);
+  } catch (const std::exception &e) {
+    std::cout << e.what() << std::endl;
+    return 1;
+  }
+
 }

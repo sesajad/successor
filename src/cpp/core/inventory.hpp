@@ -47,7 +47,7 @@ namespace inventory
         throw std::runtime_error("Cannot build image");
       }
     }
-    catch (std::exception &e)
+    catch (const std::runtime_error &e)
     {
       std::filesystem::remove_all(path(entity));
       throw e;

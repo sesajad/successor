@@ -8,40 +8,30 @@
 #include "../core/data.hpp"
 
 const std::map<std::string, std::string> HELP_TEXTS{
-    {"build", R"(
-successor build [--name | -n NAME] [--version | -v VERSION] SOURCE
+    {"build", R"(successor build [--name | -n NAME] [--version | -v VERSION] SOURCE
 
 Description:
 Builds a new image from the specified source directory. It uses buildah, docker or podman to build the image.
 
 Options:
---name | -n NAME
-The name of the image to build. If not specified, the default image from the config file is used.
---version | -v VERSION
-The version of the image to build. If not specified, the latest version is used.
+    --name | -n NAME            The name of the image to build. If not specified, the default image from the config file is used.
+    --version | -v VERSION      The version of the image to build. If not specified, the latest version is used.
 
 Arguments:
-SOURCE
-The source directory to build the image from.
-)"},
-    {"list", R"(
-successor list
+    SOURCE    The source directory to build the image from.)"},
+    {"list", R"(successor list
 
 Description:
-Lists all images and their versions, as well as the current and the next image.
-)"},
-    {"remove", R"(
-First Form:
+Lists all images and their versions, as well as the current and the next image.)"},
+    {"remove", R"(First Form:
 successor remove [--name | -n NAME] --version | -v VERSION
 
 Description:
 Removes the specified build from the successor inventory.
 
 Options:
---name | -n NAME
-The name of the image to remove. If not specified, the default image from the config file is used.
---version | -v VERSION
-The version of the image to remove.
+    --name | -n NAME          The name of the image to remove. If not specified, the default image from the config file is used.
+    --version | -v VERSION    The version of the image to remove.
 
 Second Form:
 successor remove --unused [--name | -n NAME]
@@ -50,62 +40,39 @@ Description:
 Removes all of the version, excluding the latest and running one (if any), of the specified image from the successor inventory.
 
 Options:
---name | -n NAME
-The name of the image to remove. If not specified, the default image from the config file is used.
-)"},
-    {"run", R"(
-successor run [--name | -n NAME] [--version | -v VERSION] [--persistent-directory | -p DIRECTORY]... [--exec | -e EXECUTABLE] [--replace] [--enable-logging]
+    --name | -n NAME          The name of the image to remove. If not specified, the default image from the config file is used.)"},
+    {"run", R"(successor run [--name | -n NAME] [--version | -v VERSION] [--persistent-directory | -p DIRECTORY]... [--exec | -e EXECUTABLE] [--replace] [--enable-logging]
 
 Description:
 Runs the specified image.
 
 Options:
-
---name | -n NAME
-The name of the image to run. If not specified, the default image from the config file is used.
-
---version | -v VERSION
-The version of the image to run. If not specified, the default version from the config file is used.
-
---default-persistent-directories | -dp
-If specified, the default persistent directories from the config file will be added.
-
---persistent-directory | -p DIRECTORY
-A directory that is shared between the root filesystem and the successor OS.
-
---exec | -e EXECUTABLE
-The executable to run. If not specified, the default executable from the config file is used.
-
---replace
-If specified, the running successor OS will replace the current OS. (use with caution)
-
---enable-logging
-If specified, the successor OS will collect logs.
-)"},
-    {"logs", R"(
-successor logs [--index | -i INDEX]
+    --name | -n NAME                      The name of the image to run. If not specified, the default image from the config file is used.
+    --version | -v VERSION                The version of the image to run. If not specified, the default version from the config file is used.
+    --default-persistent-directories | -dp If specified, the default persistent directories from the config file will be added.
+    --persistent-directory | -p DIRECTORY A directory that is shared between the root filesystem and the successor OS.
+    --exec | -e EXECUTABLE                The executable to run. If not specified, the default executable from the config file is used.
+    --replace                             If specified, the running successor OS will replace the current OS. (use with caution)
+    --enable-logging                      If specified, the successor OS will collect logs.)"},
+    {"logs", R"(successor logs [--index | -i INDEX]
 
 Description:
 Prints the logs of the specified boot.
 
 Options:
---index | -i INDEX
-The index of the boot to print the logs of. 1 indicates the current boot, 2 the previous one, and so on. If not specified, the current boot is used.
-)"},
-    {"", R"(
-successor v0.2.0
+    --index | -i INDEX The index of the boot to print the logs of. 1 indicates the current boot, 2 the previous one, and so on. If not specified, the current boot is used.)"},
+    {"", R"(successor v0.2.0
 successor -h | --help
 successor COMMAND [OPTIONS]
 
 Commands:
-build
-list
-logs
-remove
-run
+    build
+    list
+    logs
+    remove
+    run
 
-You can use `successor COMMAND --help` to get more information about a specific command.
-)"}};
+You can use `successor COMMAND --help` to get more information about a specific command.)"}};
 
 struct help_cmd_t
 {

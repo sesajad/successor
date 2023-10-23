@@ -179,7 +179,7 @@ namespace runner
         }
       }
     }
-    catch (std::runtime_error &e)
+    catch (const std::exception &e)
     {
       logger.err << "Error: " << e.what() << std::endl;
       logger.info << "Rolling back..." << std::endl;
