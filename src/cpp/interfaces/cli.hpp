@@ -274,7 +274,7 @@ struct run_cmd_t
 
 std::variant<run_cmd_t, help_cmd_t> parse_run_cmd(int argc, char **argv)
 {
-  run_cmd_t cmd;
+  run_cmd_t cmd = {.replace = false, .enable_logging = false, .add_default_persistent_directories = false};
 
   for (int i = 1; i < argc; i++)
   {
