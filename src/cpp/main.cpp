@@ -98,11 +98,13 @@ int main(int argc, char **argv)
 
                      std::unique_ptr<logging::logger_t> logger = nullptr;
                      if (cmd.enable_logging)
+                     {
+                       std::cout << "Logs will be sent to file. Use 'logs' command to view them." << std::endl;
                        logger = std::make_unique<logging::file_logger>();
+                     }
                      else
                        logger = std::make_unique<logging::tty_logger>();
-
-                     logger->info() << "Test" << std::endl;
+                       
                      runner::run_mode_t mode = cmd.replace ? runner::RUN_MODE_PERMANENT : runner::RUN_MODE_TEMPORARY;
                      auto executable = cmd.executable.value_or(config.default_executable.value_or(""));
                      if (cmd.executable == "")

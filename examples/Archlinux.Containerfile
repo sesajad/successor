@@ -26,7 +26,7 @@ RUN echo "Europe/London" > /etc/timezone
 
 # set up network
 RUN echo "nameserver 8.8.8.8" >> /etc/resolv.conf
-RUN echo "***REMOVED***" > /etc/hostname
+RUN echo "arasbaran" > /etc/hostname
 RUN pacman -S --noconfirm networkmanager
 RUN systemctl enable NetworkManager
 

@@ -56,11 +56,11 @@ namespace runner
       }
 
       std::filesystem::path tmprootback = "/tmprootback";
-      if (std::filesystem::exists(sysroot / tmprootback))
+      if (std::filesystem::exists(sysroot / tmprootback.relative_path()))
       {
         throw std::runtime_error("Temporary rootback directory already exists. Please remove it.");
       }
-      if (!std::filesystem::create_directories(sysroot / tmprootback))
+      if (!std::filesystem::create_directories(sysroot / tmprootback.relative_path()))
       {
         throw std::runtime_error("Cannot create temporary rootback directory.");
       }
@@ -96,10 +96,10 @@ namespace runner
       }
 
       for (const auto &m : migrating_mounts)
-        if (!std::filesystem::exists(sysroot / m))
+        if (!std::filesystem::exists(sysroot / m.substr(1)))
         {
           logger.warn() << "Warning: mountpoint " << m << " does not exist. Creating...";
-          if (!std::filesystem::create_directories(sysroot / m))
+          if (!std::filesystem::create_directories(sysroot / m.substr(1)))
           {
             throw std::runtime_error("Cannot create mountpoint " + m + ".");
           }
@@ -111,9 +111,9 @@ namespace runner
                                { sys::mnt::detach(sysroot); });
 
       logger.info() << "Setting root..." << std::endl;
-      sys::pivot_root(sysroot, sysroot / tmprootback);
+      sys::pivot_root(sysroot, sysroot / tmprootback.relative_path());
       rollback_stack.push_back([&tmprootback, &sysroot]()
-                               { sys::pivot_root(tmprootback, tmprootback / sysroot); });
+                               { sys::pivot_root(tmprootback, tmprootback / sysroot.relative_path()); });
 
       for (const std::string &mountpoint : migrating_mounts)
       {
@@ -122,9 +122,9 @@ namespace runner
         if (!use_bind)
           try
           {
-            sys::mnt::move(tmprootback / mountpoint, mountpoint);
+            sys::mnt::move(tmprootback / mountpoint.substr(1), mountpoint);
             rollback_stack.push_back([&tmprootback, mountpoint]()
-                                     { sys::mnt::move(mountpoint, tmprootback / mountpoint); });
+                                     { sys::mnt::move(mountpoint, tmprootback / mountpoint.substr(1)); });
           }
           catch (std::runtime_error &e)
           {
@@ -133,7 +133,7 @@ namespace runner
           }
 
         if (use_bind)
-          sys::mnt::bind(tmprootback / mountpoint, mountpoint);
+          sys::mnt::bind(tmprootback / mountpoint.substr(1), mountpoint);
         rollback_stack.push_back([mountpoint]()
                                  { sys::mnt::detach(mountpoint); });
       }
