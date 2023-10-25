@@ -24,7 +24,46 @@ curl -sSL https://raw.githubusercontent.com/sesajad/successor/master/install.sh 
 
 ### Using the release binaries
 
+1. Download the latest release from [here](https://github.com/sesajad/successor/releases/latest)
+
+2. Extract the archive to `some-directory`
+
+3. Copy the files to the correct location
+
+```bash
+mkdir /succ
+mkdir /succ/bin
+mkdir /succ/inv
+mkdir /succ/log
+mkdir /succ/rootback
+
+cp some-directory/* /succ/bin
+mv /sbin/init /sbin/init2
+ln -s /succ/bin/init /sbin/init
+ln -s /succ/bin/successor /sbin/successor
+```
+
 ### From the source
+
+1. Clone the repository
+
+```bash
+git clone https://github.com/sesajad/successor
+```
+
+2. Install the prerequisites
+
+- g++
+- make
+
+3. Build the project
+
+```
+cd src
+make
+```
+
+4. The built package is in release directory. Install it using the instructions above (for release binaries).
 
 ## Building Images
 

@@ -11,26 +11,7 @@ The whole idea of Successor is to use Docker (or any other OCI-compatible softwa
 curl -sSL https://raw.githubusercontent.com/sesajad/successor/master/install.sh | sudo sh
 ```
 
-### Using binaries
-
-1. Download the latest release from [here](https://github.com/sesajad/successor/releases/latest)
-
-2. Extract the archive to `some-directory`
-
-3. Copy the files to the correct location
-
-```bash
-mkdir /succ
-mkdir /succ/bin
-mkdir /succ/inv
-mkdir /succ/log
-mkdir /succ/rootback
-
-cp some-directory/* /succ/bin
-mv /sbin/init /sbin/init2
-ln -s /succ/bin/init /sbin/init
-ln -s /succ/bin/successor /sbin/successor
-```
+For other ways of installation check out [here]
 
 ## Usage
 
