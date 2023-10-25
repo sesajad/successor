@@ -176,7 +176,6 @@ namespace runner
     catch (const std::exception &e)
     {
       logger.error() << "Error: " << e.what() << std::endl;
-      sys::execute("/bin/sh", {}, false, false);
       logger.info() << "Rolling back..." << std::endl;
       roll_all_back();
       logger.info() << "Rollback complete." << std::endl;
