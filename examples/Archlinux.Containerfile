@@ -32,5 +32,5 @@ RUN systemctl enable NetworkManager
 # set up user
 RUN pacman -S --noconfirm sudo
 RUN echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-RUN useradd -m -G wheel -s /bin/zsh ***REMOVED*** 
+RUN useradd -m -G wheel -s /bin/zsh baloot 
 RUN echo "myuser:password" | chpasswd
