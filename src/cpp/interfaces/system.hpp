@@ -12,7 +12,6 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
-
 namespace sys
 {
   class system_error : public std::runtime_error
@@ -20,12 +19,6 @@ namespace sys
   public:
     system_error(std::string message) : std::runtime_error(message) {}
   };
-
-  void new_mount_namespace()
-  {
-    if (unshare(CLONE_NEWNS) != 0)
-      throw system_error("Cannot create new mount namespace. Error code: " + std::string(std::strerror(errno)));
-  }
 
   void pivot_root(std::string new_root, std::string put_old)
   {
@@ -101,10 +94,16 @@ namespace sys
       return mounts;
     }
 
-    void attach(const std::string &source, const std::string &target, const std::string &type, const std::string &options)
+    void new_namespace()
     {
-      if (mount(source.c_str(), target.c_str(), type.c_str(), 0, options.c_str()) != 0)
-        throw system_error("Cannot attach mountpoint. Error code: " + std::string(std::strerror(errno)));
+      if (unshare(CLONE_NEWNS) != 0)
+        throw system_error("Cannot create new mount namespace. Error code: " + std::string(std::strerror(errno)));
+    }
+
+    void make_private(const std::string &target)
+    {
+      if (mount(NULL, target.c_str(), NULL, MS_PRIVATE, NULL) != 0)
+        throw system_error("Cannot make mountpoint private. Error code: " + std::string(std::strerror(errno)));
     }
 
     void bind(const std::string &source, const std::string &target)

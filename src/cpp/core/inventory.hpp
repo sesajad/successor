@@ -24,12 +24,19 @@ namespace inventory
   void build(entity_t entity, std::filesystem::path source)
   {
     std::string builder = "";
-    if (sys::binary_exists("buildah"))
+    std::vector<std::string> args;
+    if (sys::binary_exists("buildah")) {
       builder = "buildah";
-    if (builder == "" && sys::binary_exists("podman"))
+      args = {"bud", "-t", entity.name + ":" + std::to_string(entity.version), "-o", "type=local,dest=" + path(entity).string(), "-f", source.string(), "."}; 
+    }
+    if (builder == "" && sys::binary_exists("podman")) {
       builder = "podman";
-    if (builder == "" && sys::binary_exists("docker"))
+      args = {"build", "-t", entity.name + ":" + std::to_string(entity.version), "-o", "type=local,dest=" + path(entity).string(), "-f", source.string(), "."};
+    }
+    if (builder == "" && sys::binary_exists("docker")) {
       builder = "docker";
+      args = {"buildx", "build", "-t", entity.name + ":" + std::to_string(entity.version), "-o", "type=local,dest=" + path(entity).string(), "-f", source.string(), "."};
+    }
 
     if (builder == "")
       throw std::runtime_error("Cannot find any container builder. Install buildah, podman or docker");
@@ -39,10 +46,11 @@ namespace inventory
 
     try
     {
-      if (sys::execute(builder, {"build",
-                                 "-t", entity.name + ":" + std::to_string(entity.version),
-                                 "-o", "type=local,dest=" + path(entity).string(),
-                                 "-f", source.string()}) != 0)
+      std::cout << "Building image using command " << builder << " ";
+      for (auto &arg : args)
+        std::cout << arg << " ";
+      std::cout << std::endl;
+      if (sys::execute(builder, args) != 0)
       {
         throw std::runtime_error("Cannot build image");
       }

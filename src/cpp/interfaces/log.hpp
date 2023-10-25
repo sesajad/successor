@@ -9,7 +9,7 @@
 
 namespace logging
 {
-  const std::filesystem::path LOG_PATH = "/succ/logs";
+  const std::filesystem::path LOG_PATH = "/succ/log";
 
   class logger_t
   {

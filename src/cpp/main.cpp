@@ -60,6 +60,7 @@ int main(int argc, char **argv)
                          if (config.default_image_name)
                            if (entity_t{image, version} == inventory::resolve(config.default_image_name.value(), config.default_image_version.value_or(version_latest)))
                              std::cout << " (next)";
+                          std::cout << std::endl;
                        }
                      }
                    },
@@ -111,6 +112,7 @@ int main(int argc, char **argv)
                        throw std::runtime_error("No executable provided");
 
                      std::vector<std::filesystem::path> persistent_directories = std::move(cmd.persistent_directories);
+                     persistent_directories.push_back("/succ"); // TODO: make it a constant
                      if (cmd.add_default_persistent_directories)
                        persistent_directories.insert(persistent_directories.end(), config.persistent_directories.begin(), config.persistent_directories.end());
 
@@ -124,7 +126,7 @@ int main(int argc, char **argv)
   }
   catch (const std::exception &e)
   {
-    std::cout << e.what() << std::endl;
+    std::cout << "Successor failed because of " << e.what() << std::endl;
     return 1;
   }
 }

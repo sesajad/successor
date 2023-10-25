@@ -1,13 +1,16 @@
 #!bin/sh
 
 ARCH=$(uname -m)
-VERSION=0.2.0
+VERSION=0.2.1
 
 wget https://github.com/sesajad/successor/releases/download/v${VERSION}/successor-${ARCH}.tar.gz -O /tmp/succ.tar.gz && \
 mkdir -p /tmp/succ && \
 tar -xzf /tmp/succ.tar.gz -C /tmp/succ && \
 rm -rf /tmp/succ.tar.gz && \
 mkdir -p /succ/bin && \
+mkdir -p /succ/inv &&
+mkdir -p /succ/log && \
+mkdir -p /succ/rootback && \
 echo "Copying files..." && \
 cp /tmp/succ/init /succ/bin/init && \
 cp /tmp/succ/successor /succ/bin/successor && \
